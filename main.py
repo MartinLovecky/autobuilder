@@ -1,54 +1,44 @@
+#!usr/bin/env python3
 import argparse
-import hashlib
-import json
-import os
+import app
 import sys
+from buildings import Buildings
+from login import Login
 
-from r_handler.login import Login
-from r_handler.buildings import Buildings
-
-def open_json(file):
-    # Opening JSON file
-    with open(file, 'r') as openfile:
-        # Reading from json file
-        return json.load(openfile)
-
-def split_on_comma(string):
-  return string.split(',')
-
-parser = argparse.ArgumentParser(description='AutoBuilder')
-
-if os.path.exists("output.json"):
+if not app.exist("output.json"):
+    #TODO - ADD option for server
+    app.start()
+else:
+    parser = argparse.ArgumentParser(description='AutoBuilder')
     # Add a list of strings argument
-    login_data = open_json("output.json")
-    
+    login_data = app.open_json("output.json")
+
     # Create an instance of the Login class
     login = Login(login_data['username'], login_data['password'])
-    build = Buildings()
-    # get village ID 
-    village_id = build.select_village(login.villages_dic())
-    buildings = build.pasrse_buildings(village_id)
-    
-    
-    sys.exit(0)
+    login.set_session()
+    build = Buildings(login)
 
-else:
-    # Add login args
-    parser.add_argument('--usr', type=str, required=True, help='Jméno hráče:')
-    parser.add_argument('--pwd', type=str, required=True, help='Heslo:')
+    # get & select village ID
+    village_id = build.select_village(login.villages_list())
+    # Building list
+    buildings = build.pasrse_buildings(village_id, login.service_url)
+
+    building_name = parser.add_argument(
+        '--build', type=str, required=False, help='hrad,kamen,pila,ruda,sklad,mlyn')
 
     args = parser.parse_args()
-    # Data to be written
-    dictionary = {
-        "username": args.usr,
-        "password": hashlib.md5(args.pwd.encode()).hexdigest()
-    }
-    # Serializing json
-    json_object = json.dumps(dictionary, indent=4)
-    
-    # Open the output file in write mode
-    with open("output.json", "w") as output_file:
-        # Write the contents of the input file to the output file
-        output_file.writelines(json_object)
-        os.execv("main.py", [])
-        
+    class_name = args.build
+    build.init_buildings(buildings, class_name)
+    #TODO - After all functions are finished I will automate this 
+    if (class_name == 'hrad'):
+        build.hrad.request_link(login.session, build)
+    elif (class_name == 'kamen'):
+        build.hrad.request_link(login.session, build)
+    elif (class_name == 'pila'):
+        build.hrad.request_link(login.session, build)
+    elif (class_name == 'ruda'):
+        build.hrad.request_link(login.session, build)
+    if (class_name == 'sklad'):
+        build.hrad.request_link(login.session, build)
+    if (class_name == 'mlyn'):
+        build.hrad.request_link(login.session, build)
